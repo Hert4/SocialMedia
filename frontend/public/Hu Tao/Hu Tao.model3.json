@@ -1,0 +1,60 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "Hu Tao.moc3",
+		"Textures": [
+			"Hu Tao.8192/texture_00.png",
+			"Hu Tao.8192/texture_01.png",
+			"Hu Tao.8192/texture_02.png"
+		],
+		"Physics": "Hu Tao.physics3.json",
+		"DisplayInfo": "Hu Tao.cdi3.json",
+		"Expressions": [
+			{
+				"Name": "ShadowEye",
+				"File": "expression/Shadow.exp3.json"
+			},
+			{
+				"Name": "Angry",
+				"File": "expression/Angry.exp3.json"
+			},
+			{
+				"Name": "EyeshineOff",
+				"File": "expression/EyeshineOff.exp3.json"
+			},
+			{
+				"Name": "Nervous",
+				"File": "expression/Nervous.exp3.json"
+			}
+		],
+		"Motions": {
+			"Talk": [
+				{
+					"File": "motion/idle.motion3.json",
+					"MotionSync": "Vowels_CRI"
+				}
+			],
+			"Motion_1": [
+				{
+					"File": "motion/motion_1.motion3.json",
+					"MotionSync": "Vowels_CRI"
+				}
+			]
+		}
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		},
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": [
+				"ParamEyeLOpen",
+				"ParamEyeROpen"
+			]
+		}
+	]
+}
