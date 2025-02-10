@@ -1,11 +1,45 @@
 import { SearchIcon } from "@chakra-ui/icons"
 import { Box, Button, Input, Skeleton, SkeletonCircle, useColorModeValue } from "@chakra-ui/react"
 import { Flex, Text } from "@chakra-ui/react"
-import { GiConversation } from "react-icons/gi"
+// import { GiConversation } from "react-icons/gi"
 import Conversation from "../components/Conversation"
 import MessageContainer from "../components/MessageContainer"
+import { useEffect, useState } from "react"
+import useShowToast from '../hooks/useShowToast'
+
 
 const ChatPage = () => {
+    const showToast = useShowToast()
+    const [loadingConversations, setLoadingConversations] = useState(true)
+    useEffect(() => {
+        const getConversation = async () => {
+            try {
+                const res = await fetch('/api/messages/conversations')
+                console.log("Response status:", res.status);
+
+                const data = await res.json()
+                if (data.error) {
+                    showToast("Error", data.error, 'error')
+                    return
+                }
+
+                if (!data || data.length === 0) console.log("Empty")
+
+
+                console.log(data)
+
+            } catch (error) {
+                // console.error(error)
+                showToast("Error", error.message, 'error')
+            } finally {
+                setLoadingConversations(false)
+            }
+        }
+
+        getConversation()
+    }, [showToast])
+
+
     return (
         <Box position={'absolute'}
             left={'50%'}
@@ -37,7 +71,7 @@ const ChatPage = () => {
 
                     </form>
 
-                    {false && (
+                    {loadingConversations && (
                         [0, 1, 2, 3, 4, 5].map((_, i) => (
                             <Flex key={i} gap={4} alignItems={'center'} p={1} borderRadius={'md'}>
                                 <Box>
@@ -51,7 +85,7 @@ const ChatPage = () => {
                             </Flex>
                         ))
                     )}
-                    <Conversation />
+                    {!loadingConversations && <Conversation />}
                 </Flex>
                 {/* <Flex
                     flex={70}

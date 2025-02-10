@@ -38,8 +38,6 @@ function Live2DComponent() {
                     motionSync.reset()
                     await model.motion('Motion_1')
                     currentMotion = null;
-
-
                     console.log("Stopped");
 
                 } else {

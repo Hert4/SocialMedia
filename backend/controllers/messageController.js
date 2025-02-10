@@ -71,24 +71,18 @@ const getMessages = async (req, res) => {
 }
 
 const getConversations = async(req, res) => {
-    const userId = req.user._id
-    try {
-        // Find all conversations where the user is a participant
-        const conversations = await Conversation.find({
-            participants: userId
-        }).populate({
-            // Populate the participants field with the username and profilePic
-            path: 'participants',
-            select: 'username profilePic'
-        })
+    const userId = req.user._id;
+	try {
+		const conversations = await Conversation.find({ participants: userId }).populate({
+			path: "participants",
+			select: "username profilePic",
+		});
 
-        res.status(200).json(conversations)
+		res.status(200).json(conversations);
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
 
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
-    }
 }
 export {sendMessage, getMessages, getConversations}
 
