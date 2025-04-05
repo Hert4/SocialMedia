@@ -9,8 +9,9 @@ import { useRecoilValue } from "recoil"
 import userAtom from "./atoms/userAtom"
 import UpdateProfilePage from "./pages/UpdateProfilePage"
 import CreatePost from "./components/CreatePost"
-// import Live2DComponent from "./components/Live2DComponent"
 import ChatPage from "./pages/ChatPage"
+import AIComponent from "./components/AIComponent"
+
 function App() {
   const user = useRecoilValue(userAtom)
 
@@ -33,6 +34,7 @@ function App() {
         {/* <Live2DComponent /> */}
 
       </Box>
+      <AIComponent currentUser={user} />
 
     </>
   )
