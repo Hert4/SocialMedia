@@ -9,7 +9,7 @@ import {
     MenuList,
     MenuItem,
     useColorModeValue,
-    Divider
+    Divider,
 } from '@chakra-ui/react'
 // import { useRecoilValue } from 'recoil'
 import userAtom from '../atoms/userAtom'
@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router-dom'
 import { useRecoilState } from "recoil";
 import { BsFillChatQuoteFill } from 'react-icons/bs'
 
+
 const Header = () => {
     const { colorMode, toggleColorMode } = useColorMode()
 
@@ -33,6 +34,8 @@ const Header = () => {
 
     const showToast = useShowToast();
     const navigate = useNavigate()
+
+
 
     const menuBgColor = useColorModeValue("gray.300", "gray.700")
     const hoverBgColor = useColorModeValue("gray.400", "gray.600");
@@ -62,6 +65,7 @@ const Header = () => {
     };
     return <>
         <Flex justifyContent={"space-between"} mt={6} mb="12">
+
             {user && (
                 <Link as={RouterLink} to="/" >
                     <AiFillHome size={24} />
@@ -81,7 +85,6 @@ const Header = () => {
                     <RxAvatar size={24} />
                 </Link>
             )} */}
-
             {user && (
                 <Flex alignItems={'center'} gap={4}>
                     <Link as={RouterLink} to="/chat">

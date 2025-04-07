@@ -1,11 +1,25 @@
 import { useState, useEffect } from "react";
-import { Box, Button, Textarea, useToast } from "@chakra-ui/react";
+import {
+    Box,
+    Button,
+    Textarea,
+    useToast,
+    Modal,
+    ModalOverlay,
+    ModalContent,
+    ModalHeader,
+    ModalFooter,
+    ModalBody,
+    ModalCloseButton,
+    useDisclosure
+} from "@chakra-ui/react";
 import { Client } from "@gradio/client";
 import { useSetRecoilState } from "recoil";
 import { conversationsAtom } from "../atoms/messagesAtom";
 import { getUserIdByUsername } from "../utils/api";
 
-const AIComponent = ({ currentUser }) => {
+const AIModal = ({ currentUser }) => {
+    const { isOpen, onOpen, onClose } = useDisclosure();
     const [message, setMessage] = useState("");
     const [chatHistory, setChatHistory] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -13,10 +27,12 @@ const AIComponent = ({ currentUser }) => {
     const setConversations = useSetRecoilState(conversationsAtom);
     const [gradioClient, setGradioClient] = useState(null);
 
+    const URL_AI = "https://cb7805770aa7f4c011.gradio.live"
+
     useEffect(() => {
         const initClient = async () => {
             try {
-                const client = await Client.connect("https://9c2068d57439202e56.gradio.live");
+                const client = await Client.connect(URL_AI);
                 setGradioClient(client);
             } catch (error) {
                 console.error("Failed to connect to Gradio client:", error);
@@ -56,11 +72,9 @@ const AIComponent = ({ currentUser }) => {
             const newHistory = [...chatHistory, [message, null]];
             setChatHistory(newHistory);
 
-            // Chỉ truyền message cuối cùng (prompt gần nhất) thay vì toàn bộ chat history
             const result = await gradioClient.predict("/respond", {
-                message: message,  // Chỉ truyền message hiện tại
-                // Bỏ tham số chat_history hoặc truyền mảng rỗng nếu API yêu cầu
-                chat_history: [],  // Hoặc có thể bỏ hoàn toàn nếu API không cần
+                message: message,
+                chat_history: [],
             });
 
             const aiResponse = result.data[1][0][1];
@@ -177,36 +191,69 @@ const AIComponent = ({ currentUser }) => {
         }
     };
 
-
     return (
-        <Box p={4} borderWidth="1px" borderRadius="lg">
-            <Box mb={4} maxH="300px" overflowY="auto">
-                {chatHistory.map(([userMsg, aiMsg], index) => (
-                    <Box key={index} mb={2}>
-                        <Box fontWeight="bold">{currentUser.username}: {userMsg}</Box>
-                        {aiMsg && <Box color="gray.600">AI: {aiMsg}</Box>}
-                    </Box>
-                ))}
-            </Box>
-
-            <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message here..."
-                mb={2}
-            />
-
+        <>
+            {/* Button to trigger the modal */}
             <Button
-                onClick={handleSendMessage}
-                isLoading={isLoading}
+                position="fixed"
+                bottom="16"
+                left="4"
                 colorScheme="blue"
-                isDisabled={!message.trim()}
+                onClick={onOpen}
+                zIndex="9999"
+                borderRadius="full"
+                boxShadow="lg"
+                p={6}
+                fontSize="lg"
             >
-                Send
+                AI Assistant
             </Button>
-        </Box>
+
+            <Modal isOpen={isOpen} onClose={onClose} size="xl">
+                <ModalOverlay />
+                <ModalContent borderRadius="md" boxShadow="xl">
+                    <ModalHeader textAlign="center" fontSize="2xl" fontWeight="bold" color="blue.600">
+                        AI Assistant
+                    </ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                        <Box mb={4} maxH="300px" overflowY="auto">
+                            {chatHistory.map(([userMsg, aiMsg], index) => (
+                                <Box key={index} mb={2}>
+                                    <Box fontWeight="bold" color="teal.500">{currentUser.username}: {userMsg}</Box>
+                                    {aiMsg && <Box color="gray.600">AI: {aiMsg}</Box>}
+                                </Box>
+                            ))}
+                        </Box>
+
+                        <Textarea
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Type your message here..."
+                            mb={2}
+                            borderColor="blue.400"
+                            focusBorderColor="blue.500"
+                            size="lg"
+                            borderRadius="md"
+                        />
+                    </ModalBody>
+
+                    <ModalFooter>
+                        <Button
+                            onClick={handleSendMessage}
+                            isLoading={isLoading}
+                            colorScheme="blue"
+                            isDisabled={!message.trim()}
+                            borderRadius="md"
+                        >
+                            Send
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+        </>
     );
 };
 
-export default AIComponent;
+export default AIModal;
