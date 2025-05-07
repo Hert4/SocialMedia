@@ -18,26 +18,8 @@ const UserPost = ({ postImg, postTitle, likes, replies }) => {
                     <Box position={'relative'} w={'full'}>
                         <Avatar
                             size={'xs'}
-                            name="Hung"
-                            src='https://uet.vnu.edu.vn/~hungpn/images/hungpn-modified.png'
-                            position={'absolute'}
-                            top={'0px'}
-                            left='15px'
-                            padding='2px'
-                        />
-                        <Avatar
-                            size={'xs'}
-                            name="Hung"
-                            src='https://uet.vnu.edu.vn/~hungpn/images/hungpn-modified.png'
-                            position={'absolute'}
-                            bottom={'0px'}
-                            left='4px'
-                            padding='2px'
-                        />
-                        <Avatar
-                            size={'xs'}
-                            name="Hung"
-                            src='https://bit.ly/dan-abramov'
+                            name=""
+                            src=''
                             position={'absolute'}
                             bottom={'0px'}
                             left='25px'

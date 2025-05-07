@@ -23,6 +23,7 @@ const ChatPage = () => {
 
 
     useEffect(() => {
+        if (!socket) return
         const getConversation = async () => {
             try {
                 const res = await fetch('/api/messages/conversations')

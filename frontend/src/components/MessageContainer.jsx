@@ -8,7 +8,7 @@ import {
     SkeletonCircle,
     Skeleton
 } from "@chakra-ui/react"
-import Message from "./Message"
+import Message from "./Message";
 import MessageInput from "./MessageInput"
 import useShowToast from "../hooks/useShowToast"
 import { useEffect, useRef, useState } from "react"
@@ -19,14 +19,13 @@ import { useSocket } from "../../context/SocketContext"
 
 const MessageContainer = () => {
     const showToast = useShowToast()
-    const [selectedConversation, setSelectedConversation] = useRecoilState(selectedConversationAtom)
+    const selectedConversation = useRecoilValue(selectedConversationAtom)
     const [loadingMessages, setLoadingMessages] = useState(true)
     const [messages, setMessages] = useState([])
     const currentUser = useRecoilValue(userAtom)
     const { socket } = useSocket()
     const [conversations, setConversations] = useRecoilState(conversationsAtom)
     const messageEndRef = useRef(null)
-    console.log("Selected Conversation: ", setSelectedConversation)
     // console.log("Messages: ", messages)
     console.log("Conversations: ", conversations)
     useEffect(() => {
@@ -69,6 +68,34 @@ const MessageContainer = () => {
     useEffect(() => {
         messageEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages])
+
+    useEffect(() => {
+        const lastMessageFromOtherUser = messages[messages.length - 1]?.sender !== currentUser._id
+        if (lastMessageFromOtherUser) {
+            socket.emit("markMessagesAsSeen", {
+                conversationId: selectedConversation?._id,
+                senderId: selectedConversation?.userId
+            })
+        }
+
+        socket.on("messagesSeen", ({ conversationId }) => {
+            if (selectedConversation._id === conversationId) {
+                setMessages(prev => {
+                    const updatedMessages = prev.map(message => {
+                        if (!message.seen) {
+                            return {
+                                ...message,
+                                seen: true
+                            }
+                        }
+                        return message
+                    })
+                    return updatedMessages
+
+                })
+            }
+        })
+    }, [socket, messages, currentUser._id, selectedConversation])
 
     useEffect(() => {
         const getMessages = async () => {
