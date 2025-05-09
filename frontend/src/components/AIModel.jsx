@@ -40,7 +40,7 @@ const AIModal = ({ currentUser }) => {
     const messagesEndRef = useRef(null);
     const [isGradioAvailable, setIsGradioAvailable] = useState(true);
 
-    const URL_AI = "https://c4d8f51ec0ebd67b44.gradio.live";
+    const URL_AI = "https://54effadad5d996a177.gradio.live";
 
     // Premium iOS colors
     const bubbleBgUser = "#007AFF";
@@ -97,6 +97,29 @@ const AIModal = ({ currentUser }) => {
         return updated.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
     };
 
+    const parseAIResponse = (response) => {
+        try {
+            // First try to parse directly
+            const parsed = JSON.parse(response);
+            return parsed;
+        } catch (e) {
+            // If direct parse fails, try cleaning the response
+            try {
+                const cleaned = response
+                    .replace(/```(json)?/g, '')
+                    .trim()
+                    .replace(/'/g, '"') // Replace single quotes with double quotes
+                    .replace(/(\w+):/g, '"$1":') // Add quotes around keys
+                    .replace(/: "([^"]+)"/g, (match, p1) => `: "${p1.replace(/"/g, '\\"')}"`); // Escape existing double quotes
+
+                return JSON.parse(cleaned);
+            } catch (e2) {
+                console.error("Failed to parse AI response:", e2);
+                return null;
+            }
+        }
+    };
+
     const handleSendMessage = async () => {
         if (!message.trim() || !gradioClient) return;
 
@@ -116,126 +139,126 @@ const AIModal = ({ currentUser }) => {
                 return;
             }
 
-            let jsonStr = aiResponse.toString().replace(/```(json)?/g, '').trim();
-            jsonStr = jsonStr.replace(/'/g, '"');
-            console.log("Processed JSON string:", jsonStr); // Add this debug log
+            // First try to parse as JSON
+            let toolCalls = parseAIResponse(aiResponse);
 
-
-            if (!jsonStr.startsWith('[') && !jsonStr.startsWith('{')) {
+            // If parsing failed, check if it's a plain text response
+            if (!toolCalls || (Array.isArray(toolCalls) && toolCalls.length === 0)) {
                 setChatHistory(prev => [...prev.slice(0, -1), [message, aiResponse]]);
                 return;
             }
 
-            const toolCalls = JSON.parse(jsonStr);
+            // Ensure toolCalls is an array
+            if (!Array.isArray(toolCalls)) {
+                toolCalls = [toolCalls];
+            }
 
-            if (Array.isArray(toolCalls) && toolCalls.length > 0) {
-                for (const call of toolCalls) {
-                    if (call.name === "send_message") {
-                        const { recipient: username, message: msgContent } = call.arguments;
-                        const trimmedUsername = username.trim();
+            // Process tool calls
+            for (const call of toolCalls) {
+                if (call.name === "send_message") {
+                    const { recipient: username, message: msgContent } = call.arguments;
+                    const trimmedUsername = username.trim();
 
-                        try {
-                            const recipientId = await getUserIdByUsername(trimmedUsername);
+                    try {
+                        const recipientId = await getUserIdByUsername(trimmedUsername);
 
-                            const res = await fetch('/api/messages/', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ message: msgContent, recipientId }),
-                            });
+                        const res = await fetch('/api/messages/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: msgContent, recipientId }),
+                        });
 
-                            if (!res.ok) {
-                                const errorData = await res.json();
-                                throw new Error(errorData.error || 'Failed to send message');
-                            }
-
-                            const data = await res.json();
-
-                            setConversations(prev => updateConversations(prev, recipientId, msgContent, data.sender));
-
-                            setChatHistory(prev => [
-                                ...prev.slice(0, -1),
-                                [message, `I have send messasge to for you!`]
-                            ]);
-
-                            toast({
-                                title: "Success",
-                                description: `Message sent to ${trimmedUsername}`,
-                                status: "success",
-                                duration: 5000,
-                                isClosable: true,
-                            });
-
-                        } catch (error) {
-                            toast({
-                                title: "Error",
-                                description: error.message,
-                                status: "error",
-                                duration: 5000,
-                                isClosable: true,
-                            });
-                            setChatHistory(prev => [
-                                ...prev.slice(0, -1),
-                                [message, `Failed to send message: ${error.message}`]
-                            ]);
+                        if (!res.ok) {
+                            const errorData = await res.json();
+                            throw new Error(errorData.error || 'Failed to send message');
                         }
-                    } else if (call.name === "update_profile") {
-                        try {
-                            const { name, username, email } = call.arguments;
 
-                            const res = await fetch(`/api/users/update/${currentUser._id}`, {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    name: name || undefined,
-                                    username: username || undefined,
-                                    email: email || undefined,
-                                }),
-                            });
+                        const data = await res.json();
 
-                            if (!res.ok) {
-                                const errorData = await res.json();
-                                throw new Error(errorData.error || 'Failed to update profile');
-                            }
-                            const data = await res.json();
+                        setConversations(prev => updateConversations(prev, recipientId, msgContent, data.sender));
 
-                            localStorage.setItem("user-threads", JSON.stringify(data));
+                        setChatHistory(prev => [
+                            ...prev.slice(0, -1),
+                            [message, `I have sent a message to ${trimmedUsername} for you!`]
+                        ]);
 
-                            // Add this debug log to see the response:
-                            const updatedUser = await res.json();
-                            console.log("Update response:", updatedUser);
+                        toast({
+                            title: "Success",
+                            description: `Message sent to ${trimmedUsername}`,
+                            status: "success",
+                            duration: 5000,
+                            isClosable: true,
+                        });
 
-                            toast({
-                                title: "Success",
-                                description: "Profile updated successfully",
-                                status: "success",
-                                duration: 5000,
-                                isClosable: true,
-                            });
+                    } catch (error) {
+                        toast({
+                            title: "Error",
+                            description: error.message,
+                            status: "error",
+                            duration: 5000,
+                            isClosable: true,
+                        });
+                        setChatHistory(prev => [
+                            ...prev.slice(0, -1),
+                            [message, `Failed to send message: ${error.message}`]
+                        ]);
+                    }
+                } else if (call.name === "update_profile") {
+                    try {
+                        const { name, username, email, bio } = call.arguments || {};
 
-                            setChatHistory(prev => [
-                                ...prev.slice(0, -1),
-                                [message, `Your profile has been updated successfully!`]
-                            ]);
-                        } catch (error) {
-                            console.error("Update error:", error);  // Add this for debugging
-                            toast({
-                                title: "Error",
-                                description: error.message,
-                                status: "error",
-                                duration: 5000,
-                                isClosable: true,
-                            });
-                            setChatHistory(prev => [
-                                ...prev.slice(0, -1),
-                                [message, `Failed to update profile: ${error.message}`]
-                            ]);
+                        const updateData = {};
+                        if (name) updateData.name = name;
+                        if (username) updateData.username = username;
+                        if (email) updateData.email = email;
+                        if (bio) updateData.bio = bio;
+
+                        const res = await fetch(`/api/users/update/${currentUser._id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(updateData),
+                        });
+
+                        // Clone the response before reading it
+                        const responseClone = res.clone();
+
+                        if (!res.ok) {
+                            const errorData = await responseClone.json();
+                            throw new Error(errorData.error || 'Failed to update profile');
                         }
+
+                        const data = await responseClone.json();
+                        localStorage.setItem("user-threads", JSON.stringify(data));
+
+                        toast({
+                            title: "Success",
+                            description: "Profile updated successfully",
+                            status: "success",
+                            duration: 5000,
+                            isClosable: true,
+                        });
+
+                        setChatHistory(prev => [
+                            ...prev.slice(0, -1),
+                            [message, `Your profile has been updated successfully!`]
+                        ]);
+                    } catch (error) {
+                        console.error("Update error:", error);
+                        toast({
+                            title: "Error",
+                            description: error.message,
+                            status: "error",
+                            duration: 5000,
+                            isClosable: true,
+                        });
+                        setChatHistory(prev => [
+                            ...prev.slice(0, -1),
+                            [message, `Failed to update profile: ${error.message}`]
+                        ]);
                     }
                 }
-            } else {
-                setChatHistory(prev => [...prev.slice(0, -1), [message, aiResponse]]);
             }
         } catch (e) {
             console.error("Error:", e);
@@ -246,12 +269,14 @@ const AIModal = ({ currentUser }) => {
                 duration: 5000,
                 isClosable: true,
             });
-            setChatHistory(prev => [...prev.slice(0, -1)]);
+            setChatHistory(prev => [...prev.slice(0, -1), [message, aiResponse || "Sorry, I couldn't process your request."]]);
         } finally {
             setIsLoading(false);
             setMessage("");
         }
     };
+
+
 
     const handleKeyDown = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
